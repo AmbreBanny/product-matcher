@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="fr" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
+<title>Product Matcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080c;
+    --surface: rgba(255, 255, 255, .04);
+    --surface-2: rgba(255, 255, 255, .07);
+    --border: rgba(255, 255, 255, .09);
+    --txt: #eef0f5;
+    --muted: #8b90a0;
+    --accent: #8b5cf6;
+    --accent-2: #22d3ee;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --ko: #f87171;
+    --radius: 18px;
+    --mono: "JetBrains Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--txt);
+    overflow-x: hidden;
+
+    /* Fond aurore animé */
+    &::before, &::after {
+      content: "";
+      position: fixed;
+      width: 60vmax;
+      height: 60vmax;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: .25;
+      z-index: -1;
+      animation: flotte 18s ease-in-out infinite alternate;
+    }
+    &::before { background: var(--accent); top: -25vmax; left: -15vmax; }
+    &::after { background: var(--accent-2); bottom: -30vmax; right: -20vmax; animation-delay: -9s; }
+  }
+
+  @keyframes flotte { to { transform: translate(8vmax, 6vmax) scale(1.15); } }
+  @keyframes apparait { from { opacity: 0; transform: translateY(12px); } }
+
+  .conteneur { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+
+  /* En-tête */
+  .hero {
+    margin-bottom: 28px;
+
+    .surtitre {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+    }
+    h1 {
+      margin: 8px 0;
+      font-size: clamp(36px, 6vw, 64px);
+      line-height: 1;
+      background: linear-gradient(100deg, #fff 30%, var(--accent) 70%, var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    p { color: var(--muted); max-width: 560px; margin: 0; }
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .stat {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    backdrop-filter: blur(12px);
+    animation: apparait .6s backwards;
+
+    b { display: block; font-family: var(--mono); font-size: 26px; }
+    span { color: var(--muted); font-size: 13px; }
+  }
+
+  /* Barre d'outils */
+  .outils {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 24px;
+    @media (max-width: 900px) { grid-template-columns: 1fr; }
+  }
+
+  .recherche {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--txt);
+    font: inherit;
+    transition: border-color .2s, box-shadow .2s;
+    &:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(139, 92, 246, .2); }
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+  .chip {
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    &:hover { color: var(--txt); border-color: var(--accent); }
+    &.actif { background: var(--accent); border-color: var(--accent); color: #fff; }
+  }
+
+  .seuil {
+    min-width: 300px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+
+    label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+    output { font-family: var(--mono); color: var(--txt); }
+    input { width: 100%; accent-color: var(--accent); margin: 12px 0; }
+  }
+
+  .compromis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    div { font-size: 12px; color: var(--muted); }
+    b { display: block; font-family: var(--mono); font-size: 18px; color: var(--txt); }
+  }
+
+  /* Zone principale */
+  main {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 24px;
+    align-items: start;
+    @media (max-width: 900px) { grid-template-columns: 1fr; }
+  }
+
+  .grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
+  }
+
+  .vignette {
+    position: relative;
+    padding: 6px;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    background: #fff;
+    cursor: pointer;
+    animation: apparait .5s backwards;
+    animation-delay: calc(var(--i) * 15ms);
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+
+    img { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; display: block; }
+    &:hover, &:focus-visible {
+      outline: none;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px -8px rgba(139, 92, 246, .6);
+    }
+    &.actif { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(139, 92, 246, .35); }
+  }
+
+  .panneau {
+    position: sticky;
+    top: 24px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    @media (max-width: 900px) { position: static; }
+  }
+
+  .vide { color: var(--muted); text-align: center; padding: 48px 16px; }
+
+  .etiquette {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+
+  .cible {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    animation: apparait .4s backwards;
+
+    img { width: 90px; aspect-ratio: 3 / 4; object-fit: contain; background: #fff; border-radius: 12px; padding: 4px; }
+    h2 { margin: 0 0 4px; font-size: 18px; }
+  }
+
+  .categorie { color: var(--muted); font-size: 13px; }
+
+  .equivalent {
+    display: grid;
+    grid-template-columns: auto 70px 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    animation: apparait .4s backwards;
+    animation-delay: calc(var(--i) * 80ms);
+
+    .rang { font-family: var(--mono); color: var(--muted); }
+    img { width: 70px; aspect-ratio: 3 / 4; object-fit: contain; background: #fff; border-radius: 10px; padding: 3px; }
+    .nom { font-weight: 500; margin-bottom: 4px; }
+  }
+
+  .pastille {
+    display: inline-block;
+    padding: 2px 10px;
+    margin-left: 6px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    &.ok { background: rgba(52, 211, 153, .15); color: var(--ok); }
+    &.warn { background: rgba(251, 191, 36, .15); color: var(--warn); }
+    &.ko { background: rgba(248, 113, 113, .15); color: var(--ko); }
+  }
+
+  .barre {
+    display: grid;
+    grid-template-columns: 52px 1fr 48px;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+
+    .piste { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+    .remplissage {
+      height: 100%;
+      width: 0;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width .9s cubic-bezier(.2, .8, .2, 1);
+    }
+    &.secondaire .remplissage { background: rgba(255, 255, 255, .35); }
+    span:last-child { font-family: var(--mono); text-align: right; color: var(--txt); }
+  }
+
+  .alerte {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(248, 113, 113, .3);
+    border-radius: 12px;
+    background: rgba(248, 113, 113, .08);
+    color: var(--ko);
+    font-size: 14px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="conteneur">
+  <header class="hero">
+    <div class="surtitre">Projet data · IA</div>
+    <h1>Product Matcher</h1>
+    <p>Trouver automatiquement l'équivalent d'un produit dans un autre catalogue, en combinant l'analyse de l'image et du texte.</p>
+    <div class="stats">
+      <div class="stat" style="animation-delay:.1s"><b>1 000</b><span>produits analysés</span></div>
+      <div class="stat" style="animation-delay:.2s"><b>2</b><span>catalogues comparés</span></div>
+      <div class="stat" style="animation-delay:.3s"><b>77 %</b><span>de précision (hybride)</span></div>
+      <div class="stat" style="animation-delay:.4s"><b>+10 pts</b><span>vs image seule</span></div>
+    </div>
+  </header>
+
+  <section class="outils">
+    <div>
+      <input class="recherche" type="search" id="recherche" placeholder="Rechercher un produit du catalogue A…" aria-label="Rechercher un produit">
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="seuil">
+      <label for="seuil">Seuil de confiance <output id="valSeuil"></output></label>
+      <input type="range" id="seuil" step="0.001">
+      <div class="compromis">
+        <div><b id="couverture">–</b>des produits ont un match fiable</div>
+        <div><b id="precision">–</b>de ces matchs sont justes</div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <div class="grille" id="grille"></div>
+    <aside class="panneau" id="panneau" aria-live="polite">
+      <div class="vide">Sélectionne un produit pour découvrir ses équivalents.</div>
+    </aside>
+  </main>
+</div>
+
+<script>
+  let data = [], actif = null, filtre = "Tout";
+  const echelles = {};
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  fetch("data.json").then(r => r.json()).then(d => {
+    data = d;
+
+    // Échelles pour que les barres soient lisibles malgré des scores très proches
+    for (const cle of ["score", "score_image", "score_texte"]) {
+      const valeurs = d.flatMap(p => p.equivalents.map(e => e[cle]));
+      echelles[cle] = [Math.min(...valeurs), Math.max(...valeurs)];
+    }
+
+    // Le curseur démarre sur une valeur qui écarte le quart des matchs les moins sûrs
+    const tops = d.map(p => p.equivalents[0].score).sort((a, b) => a - b);
+    Object.assign($("seuil"), { min: tops[0], max: tops.at(-1), value: tops[Math.floor(tops.length / 4)] });
+
+    construireChips();
+    majSeuil();
+    afficherGrille();
+  });
+
+  const pourcentage = (v, cle) => {
+    const [mini, maxi] = echelles[cle];
+    return Math.max(4, ((v - mini) / (maxi - mini)) * 100);
+  };
+
+  function niveau(score) {
+    const seuil = Number($("seuil").value);
+    if (score >= seuil) return ["Fiable", "ok"];
+    if (score >= seuil - 0.02) return ["À vérifier", "warn"];
+    return ["Insuffisant", "ko"];
+  }
+
+  function construireChips() {
+    const compte = {};
+    data.forEach(p => compte[p.categorie] = (compte[p.categorie] || 0) + 1);
+    const principales = Object.entries(compte).sort((a, b) => b[1] - a[1]).slice(0, 8).map(c => c[0]);
+    $("chips").innerHTML = ["Tout", ...principales]
+      .map(c => `<button class="chip ${c === filtre ? "actif" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`)
+      .join("");
+  }
+
+  function majSeuil() {
+    const seuil = Number($("seuil").value);
+    $("valSeuil").textContent = seuil.toFixed(3);
+    const retenus = data.filter(p => p.equivalents[0].score >= seuil);
+    const justes = retenus.filter(p => p.equivalents[0].categorie === p.categorie).length;
+    $("couverture").textContent = Math.round((retenus.length / data.length) * 100) + " %";
+    $("precision").textContent = retenus.length ? Math.round((justes / retenus.length) * 100) + " %" : "–";
+  }
+
+  function afficherGrille() {
+    const q = $("recherche").value.toLowerCase();
+    const visibles = data.filter(p =>
+      p.nom.toLowerCase().includes(q) && (filtre === "Tout" || p.categorie === filtre));
+    $("grille").innerHTML = visibles.map((p, i) => `
+      <button class="vignette ${actif?.id === p.id ? "actif" : ""}" data-id="${p.id}"
+              style="--i:${Math.min(i, 40)}" title="${esc(p.nom)}" aria-label="${esc(p.nom)}">
+        <img src="${p.image}" alt="" loading="lazy">
+      </button>`).join("") || '<div class="vide">Aucun produit ne correspond.</div>';
+  }
+
+  function barre(libelle, valeur, cle, secondaire = false) {
+    return `<div class="barre ${secondaire ? "secondaire" : ""}">
+      <span>${libelle}</span>
+      <div class="piste"><div class="remplissage" data-w="${pourcentage(valeur, cle)}"></div></div>
+      <span>${valeur.toFixed(3)}</span>
+    </div>`;
+  }
+
+  function afficherPanneau() {
+    if (!actif) return;
+    const [, classeTop] = niveau(actif.equivalents[0].score);
+    $("panneau").innerHTML = `
+      <p class="etiquette">Produit recherché · catalogue A</p>
+      <div class="cible">
+        <img src="${actif.image}" alt="">
+        <div><h2>${esc(actif.nom)}</h2><div class="categorie">${esc(actif.categorie)}</div></div>
+      </div>
+      <p class="etiquette">Équivalents proposés · catalogue B</p>
+      ${classeTop === "ok" ? "" : '<div class="alerte">Aucun équivalent fiable : le meilleur score est sous le seuil de confiance.</div>'}
+      ${actif.equivalents.map((e, i) => {
+        const [texte, classe] = niveau(e.score);
+        return `<div class="equivalent" style="--i:${i}">
+          <span class="rang">0${i + 1}</span>
+          <img src="${e.image}" alt="">
+          <div>
+            <div class="nom">${esc(e.nom)}</div>
+            <div class="categorie">${esc(e.categorie)}<span class="pastille ${classe}">${texte}</span></div>
+            ${barre("Score", e.score, "score")}
+            ${barre("Image", e.score_image, "score_image", true)}
+            ${barre("Texte", e.score_texte, "score_texte", true)}
+          </div>
+        </div>`;
+      }).join("")}`;
+
+    // On lance l'animation des barres juste après l'affichage
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      document.querySelectorAll(".remplissage").forEach(b => b.style.width = b.dataset.w + "%")));
+  }
+
+  // Interactions
+  $("grille").addEventListener("click", e => {
+    const v = e.target.closest(".vignette");
+    if (!v) return;
+    actif = data.find(p => p.id == v.dataset.id);
+    document.querySelectorAll(".vignette.actif").forEach(x => x.classList.remove("actif"));
+    v.classList.add("actif");
+    afficherPanneau();
+    if (window.innerWidth <= 900) $("panneau").scrollIntoView({ behavior: "smooth" });
+  });
+
+  $("chips").addEventListener("click", e => {
+    const c = e.target.closest(".chip");
+    if (!c) return;
+    filtre = c.dataset.cat;
+    construireChips();
+    afficherGrille();
+  });
+
+  $("recherche").addEventListener("input", afficherGrille);
+  $("seuil").addEventListener("input", () => { majSeuil(); afficherPanneau(); });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && actif) {
+      actif = null;
+      document.querySelectorAll(".vignette.actif").forEach(x => x.classList.remove("actif"));
+      $("panneau").innerHTML = '<div class="vide">Sélectionne un produit pour découvrir ses équivalents.</div>';
+    }
+  });
+</script>
+</body>
+</html>
